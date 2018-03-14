@@ -1,0 +1,8 @@
+[package]
+name = "netdmx"
+version = "0.1.0"
+authors = ["Dustin Frisch <fooker@lab.sh>"]
+
+[dependencies]
+libusb = ""
+clap = ""

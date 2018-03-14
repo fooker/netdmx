@@ -1,0 +1,8 @@
+# Build
+/target
+**/*.rs.bk
+
+# IDE
+/.idea
+/netdmx.iml
+
