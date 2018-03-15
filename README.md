@@ -1,5 +1,7 @@
 # netdmx
 
+[![Build Status](https://travis-ci.org/fooker/netdmx.svg?branch=master)](https://travis-ci.org/fooker/netdmx)
+
 `netdmx` is a DMX controller driver with a very simple network interface.
 It listens for UDP packes and sends the received data to a DMX universe.
 

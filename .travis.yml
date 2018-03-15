@@ -1,0 +1,17 @@
+language: rust
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+cache: cargo
+
+addons:
+  apt:
+    packages:
+      - libusb-1.0-0-dev
+
+script:
+  - cargo build --verbose --all
+
