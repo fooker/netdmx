@@ -2,6 +2,9 @@
 name = "netdmx"
 version = "0.1.0"
 authors = ["Dustin Frisch <fooker@lab.sh>"]
+license = "MIT/Apache-2.0"
+description = "Network to DMX"
+readme = "README.md"
 
 [dependencies]
 libusb = ""
