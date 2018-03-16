@@ -15,8 +15,8 @@ impl<'a> EuroliteProController<'a> {
     const ENDPOINT: u8 = 0x02;
 
     const FRAME_START_OF_MESSAGE: u8 = 0x7e;
-    const FRAME_END_OF_MESSAGE: u8 = 0x7e;
-    const FRAME_DMX_LABEL: u8 = 6;
+    const FRAME_END_OF_MESSAGE: u8 = 0xe7;
+    const FRAME_DMX_LABEL: u8 = 0x06;
 
     pub fn new(context: &'a libusb::Context) -> Self {
         let mut device = context.open_device_with_vid_pid(Self::VENDOR_ID, Self::PRODUCT_ID)
@@ -37,9 +37,9 @@ impl<'a> Controller for EuroliteProController<'a> {
         let frame: [u8; 518] = [
             Self::FRAME_START_OF_MESSAGE,
             Self::FRAME_DMX_LABEL,
-            (((512 + 1 as u16).to_be() >> 0) & 0xFF) as u8,
-            (((512 + 1 as u16).to_be() >> 8) & 0xFF) as u8,
-            0, // DMX start code
+            0x01, // 512 + 1 bytes of date ...
+            0x02, // ... following
+            0x00, // DMX start code
             data[0x000], data[0x001], data[0x002], data[0x003], data[0x004], data[0x005], data[0x006], data[0x007],
             data[0x008], data[0x009], data[0x00a], data[0x00b], data[0x00c], data[0x00d], data[0x00e], data[0x00f],
             data[0x010], data[0x011], data[0x012], data[0x013], data[0x014], data[0x015], data[0x016], data[0x017],

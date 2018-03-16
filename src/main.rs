@@ -50,7 +50,7 @@ fn main() {
         ControllerType::EurolitePro => Box::new(eurolite_pro::EuroliteProController::new(&context)),
     };
 
-    let socket = net::UdpSocket::bind(matches.value_of("port").unwrap())
+    let socket = net::UdpSocket::bind(matches.value_of("listen").unwrap())
         .expect("Failed to open socket");
 
     let mut data = [0; 512];
@@ -58,7 +58,6 @@ fn main() {
     loop {
         socket.recv(&mut data)
             .expect("Failed to receive data");
-
 
         controller.send(data);
     }
