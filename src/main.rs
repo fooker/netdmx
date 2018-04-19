@@ -7,7 +7,7 @@ use clap::{App, Arg};
 
 use std::net;
 
-mod anymau;
+mod anyma;
 mod eurolite_pro;
 
 trait Controller {
@@ -17,7 +17,7 @@ trait Controller {
 arg_enum! {
     #[derive(PartialEq, Debug)]
     enum ControllerType {
-        Anymau,
+        Anyma,
         EurolitePro
     }
 }
@@ -46,7 +46,7 @@ fn main() {
         .expect("Failed to init libusb context");
 
     let mut controller: Box<Controller> = match value_t_or_exit!(matches, "type", ControllerType) {
-        ControllerType::Anymau => Box::new(anymau::AnymauController::new(&context)),
+        ControllerType::Anyma => Box::new(anyma::AnymaController::new(&context)),
         ControllerType::EurolitePro => Box::new(eurolite_pro::EuroliteProController::new(&context)),
     };
 

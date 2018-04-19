@@ -4,15 +4,15 @@ use std::time;
 
 use libusb;
 
-pub struct AnymauController<'a> {
+pub struct AnymaController<'a> {
     device: libusb::DeviceHandle<'a>,
 }
 
-impl<'a> AnymauController<'a> {
+impl<'a> AnymaController<'a> {
     const VENDOR_ID: u16 = 0x16c0;
     const PRODUCT_ID: u16 = 0x05dc;
 
-    const REQUEST_SET_CHANNEL_RANGE: u8 = 0x0002;
+    const REQUEST_SET_CHANNEL_RANGE: u8 = 0x02;
 
     pub fn new(context: &'a libusb::Context) -> Self {
         let mut device = context.open_device_with_vid_pid(Self::VENDOR_ID, Self::PRODUCT_ID)
@@ -27,7 +27,7 @@ impl<'a> AnymauController<'a> {
     }
 }
 
-impl<'a> Controller for AnymauController<'a> {
+impl<'a> Controller for AnymaController<'a> {
     fn send(&mut self, data: [u8; 512]) {
         self.device.write_control(libusb::request_type(libusb::Direction::Out, libusb::RequestType::Vendor, libusb::Recipient::Device),
                                   Self::REQUEST_SET_CHANNEL_RANGE,
