@@ -3,16 +3,22 @@ extern crate clap;
 
 extern crate libusb;
 
-use clap::{App, Arg};
 
 use std::net;
+use std::thread;
+use std::sync::mpsc;
+
+use clap::{App, Arg};
+
 
 mod anyma;
 mod eurolite_pro;
 
+
 trait Controller {
     fn send(&mut self, data: [u8; 512]);
 }
+
 
 arg_enum! {
     #[derive(PartialEq, Debug)]
@@ -21,6 +27,7 @@ arg_enum! {
         EurolitePro
     }
 }
+
 
 fn main() {
     let matches = App::new("netdmx")
@@ -42,23 +49,32 @@ fn main() {
             .possible_values(&ControllerType::variants()))
         .get_matches();
 
+    let socket = net::UdpSocket::bind(matches.value_of("listen").unwrap())
+        .expect("Failed to open socket");
+
     let context = libusb::Context::new()
-        .expect("Failed to init libusb context");
+            .expect("Failed to init libusb context");
 
     let mut controller: Box<Controller> = match value_t_or_exit!(matches, "type", ControllerType) {
         ControllerType::Anyma => Box::new(anyma::AnymaController::new(&context)),
         ControllerType::EurolitePro => Box::new(eurolite_pro::EuroliteProController::new(&context)),
     };
 
-    let socket = net::UdpSocket::bind(matches.value_of("listen").unwrap())
-        .expect("Failed to open socket");
+    let (output_pub, output_sub) = mpsc::sync_channel(0);
+    thread::spawn(move || {
+        let mut data = [0; 512];
+        loop {
+            socket.recv(&mut data)
+                  .expect("Failed to receive data");
 
-    let mut data = [0; 512];
+            if let Err(mpsc::TrySendError::Full(_)) = output_pub.try_send(data) {
+                eprintln!("Output is to slow. Dropping frame.");
+            }
+        }
+    });
 
     loop {
-        socket.recv(&mut data)
-            .expect("Failed to receive data");
-
+        let data = output_sub.recv().unwrap();
         controller.send(data);
     }
 }
