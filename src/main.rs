@@ -31,26 +31,26 @@ arg_enum! {
 
 fn main() {
     let matches = App::new("netdmx")
-        .about("Network to DMX")
-        .version(crate_version!())
-        .arg(Arg::with_name("listen")
-            .short("l")
-            .long("listen")
-            .value_name("HOST:PORT")
-            .help("UDP host and port to receive data on")
-            .takes_value(true)
-            .default_value("127.0.0.1:34254"))
-        .arg(Arg::with_name("type")
-            .long("type")
-            .value_name("TYPE")
-            .help("DMX Controller type")
-            .takes_value(true)
-            .required(true)
-            .possible_values(&ControllerType::variants()))
-        .get_matches();
+            .about("Network to DMX")
+            .version(crate_version!())
+            .arg(Arg::with_name("listen")
+                    .short("l")
+                    .long("listen")
+                    .value_name("HOST:PORT")
+                    .help("UDP host and port to receive data on")
+                    .takes_value(true)
+                    .default_value("127.0.0.1:34254"))
+            .arg(Arg::with_name("type")
+                    .long("type")
+                    .value_name("TYPE")
+                    .help("DMX Controller type")
+                    .takes_value(true)
+                    .required(true)
+                    .possible_values(&ControllerType::variants()))
+            .get_matches();
 
     let socket = net::UdpSocket::bind(matches.value_of("listen").unwrap())
-        .expect("Failed to open socket");
+            .expect("Failed to open socket");
 
     let context = libusb::Context::new()
             .expect("Failed to init libusb context");

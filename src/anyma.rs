@@ -16,10 +16,10 @@ impl<'a> AnymaController<'a> {
 
     pub fn new(context: &'a libusb::Context) -> Self {
         let mut device = context.open_device_with_vid_pid(Self::VENDOR_ID, Self::PRODUCT_ID)
-            .expect("Unable to open USB device");
+                                .expect("Unable to open USB device");
 
         device.claim_interface(0)
-            .expect("Failed to claim interface");
+              .expect("Failed to claim interface");
 
         return Self {
             device
