@@ -55,7 +55,7 @@ fn main() {
     let context = libusb::Context::new()
             .expect("Failed to init libusb context");
 
-    let mut controller: Box<Controller> = match value_t_or_exit!(matches, "type", ControllerType) {
+    let mut controller: Box<dyn Controller> = match value_t_or_exit!(matches, "type", ControllerType) {
         ControllerType::Anyma => Box::new(anyma::AnymaController::new(&context)),
         ControllerType::EurolitePro => Box::new(eurolite_pro::EuroliteProController::new(&context)),
     };
