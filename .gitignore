@@ -6,3 +6,5 @@
 /.idea
 /netdmx.iml
 
+# Nix
+/result
