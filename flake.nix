@@ -30,17 +30,28 @@
 
         craneLib = (crane.mkLib pkgs).overrideToolchain rust;
 
-        netdmx = craneLib.buildPackage {
-          src = craneLib.cleanCargoSource (craneLib.path ./.);
-          strictDeps = true;
+        src = craneLib.cleanCargoSource (craneLib.path ./.);
+
+        cargoArtifacts = craneLib.buildDepsOnly {
+          inherit src;
 
           buildInputs = with pkgs; [
             pkg-config
             libusb1
-          ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-            pkgs.libiconv
           ];
         };
+
+        netdmx = (craneLib.buildPackage {
+          inherit src;
+
+          strictDeps = true;
+
+          inherit cargoArtifacts;
+
+          buildInput = with pkgs; [
+            libusb1
+          ];
+        });
       in
       {
         checks = {
@@ -50,6 +61,7 @@
         packages = rec {
           inherit netdmx;
           default = netdmx;
+          deps = cargoArtifacts;
         };
 
         apps = rec {
@@ -64,7 +76,7 @@
         devShells.default = craneLib.devShell {
           checks = self.checks.${system};
 
-          packages = with pkgs; [
+          buildInputs = with pkgs; [
             pkg-config
             libusb1
           ];
