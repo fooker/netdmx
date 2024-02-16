@@ -1,14 +1,8 @@
-#[macro_use]
-extern crate clap;
-
-extern crate libusb;
-
-
 use std::net;
 use std::thread;
 use std::sync::mpsc;
 
-use clap::{App, Arg};
+use clap::{Command, Arg, ValueEnum, builder::PossibleValue, builder::EnumValueParser, crate_version};
 
 
 mod anyma;
@@ -20,42 +14,55 @@ trait Controller {
 }
 
 
-arg_enum! {
-    #[derive(PartialEq, Debug)]
-    enum ControllerType {
-        Anyma,
-        EurolitePro
+#[derive(PartialEq, Clone, Debug)]
+enum ControllerType {
+    Anyma,
+    EurolitePro
+}
+
+impl ValueEnum for ControllerType {
+    fn value_variants<'a>() -> &'a [Self] {
+        return &[
+            Self::Anyma,
+            Self::EurolitePro,
+        ];
+    }
+
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        return Some(match self {
+            Self::Anyma => PossibleValue::new("anyma"),
+            Self::EurolitePro => PossibleValue::new("eurolite"),
+        });
     }
 }
 
 
 fn main() {
-    let matches = App::new("netdmx")
+    let matches = Command::new("netdmx")
             .about("Network to DMX")
             .version(crate_version!())
-            .arg(Arg::with_name("listen")
-                    .short("l")
+            .arg(Arg::new("listen")
+                    .short('l')
                     .long("listen")
                     .value_name("HOST:PORT")
                     .help("UDP host and port to receive data on")
-                    .takes_value(true)
                     .default_value("127.0.0.1:34254"))
-            .arg(Arg::with_name("type")
+            .arg(Arg::new("type")
+                    .short('t')
                     .long("type")
                     .value_name("TYPE")
                     .help("DMX Controller type")
-                    .takes_value(true)
                     .required(true)
-                    .possible_values(&ControllerType::variants()))
+                    .value_parser(EnumValueParser::<ControllerType>::new()))
             .get_matches();
 
-    let socket = net::UdpSocket::bind(matches.value_of("listen").unwrap())
+    let socket = net::UdpSocket::bind(matches.get_one::<String>("listen").unwrap())
             .expect("Failed to open socket");
 
     let context = libusb::Context::new()
             .expect("Failed to init libusb context");
 
-    let mut controller: Box<dyn Controller> = match value_t_or_exit!(matches, "type", ControllerType) {
+    let mut controller: Box<dyn Controller> = match matches.get_one::<ControllerType>("type").unwrap() {
         ControllerType::Anyma => Box::new(anyma::AnymaController::new(&context)),
         ControllerType::EurolitePro => Box::new(eurolite_pro::EuroliteProController::new(&context)),
     };
