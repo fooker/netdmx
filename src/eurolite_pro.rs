@@ -22,9 +22,12 @@ impl<'a> EuroliteProController<'a> {
         let mut device = context.open_device_with_vid_pid(Self::VENDOR_ID, Self::PRODUCT_ID)
             .expect("Unable to open USB device");
 
+        let _ = device.detach_kernel_driver(1);
+
         // TODO: OLA searches for an interface with endpoint address 0x02 (ENDPOINT) here
         device.claim_interface(1)
             .expect("Failed to claim interface");
+
 
         return Self {
             device
