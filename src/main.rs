@@ -1,16 +1,13 @@
 use std::net;
-use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
 use clap::{Arg, builder::EnumValueParser, builder::PossibleValue, Command, crate_version, ValueEnum};
+use triple_buffer::triple_buffer;
 
 use controller::Controller;
 
-use crate::buffer::Buffer;
-
 mod controller;
-mod buffer;
 
 #[derive(PartialEq, Clone, Debug)]
 enum ControllerType {
@@ -65,16 +62,14 @@ fn main() {
         ControllerType::EurolitePro => Box::new(controller::EuroliteProController::new(&context)),
     };
 
-    let buffer: Arc<Buffer<[u8; 512]>> = Buffer::with_constructor(|| [0; 512]).into();
-    let r = buffer.clone();
-    let w = buffer.clone();
+    let (mut w, mut r) = triple_buffer(&[0u8; 512]);
 
     thread::spawn(move || {
         loop {
-            w.update(|data| {
-                socket.recv(&mut *data)
-                    .expect("Failed to receive data");
-            });
+            socket.recv(w.input_buffer())
+                .expect("Failed to receive data");
+
+            w.publish();
         }
     });
 
@@ -82,8 +77,8 @@ fn main() {
 
     loop {
         {
-            let data = r.read();
-            controller.send(&*data);
+            r.update();
+            controller.send(r.read());
         }
 
         thread::sleep(Duration::from_millis(10));
