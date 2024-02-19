@@ -1,23 +1,21 @@
 use std::net;
+use std::sync::Arc;
 use std::thread;
-use std::sync::mpsc;
+use std::time::Duration;
 
-use clap::{Command, Arg, ValueEnum, builder::PossibleValue, builder::EnumValueParser, crate_version};
+use clap::{Arg, builder::EnumValueParser, builder::PossibleValue, Command, crate_version, ValueEnum};
 
+use controller::Controller;
 
-mod anyma;
-mod eurolite_pro;
+use crate::buffer::Buffer;
 
-
-trait Controller {
-    fn send(&mut self, data: [u8; 512]);
-}
-
+mod controller;
+mod buffer;
 
 #[derive(PartialEq, Clone, Debug)]
 enum ControllerType {
     Anyma,
-    EurolitePro
+    EurolitePro,
 }
 
 impl ValueEnum for ControllerType {
@@ -39,49 +37,55 @@ impl ValueEnum for ControllerType {
 
 fn main() {
     let matches = Command::new("netdmx")
-            .about("Network to DMX")
-            .version(crate_version!())
-            .arg(Arg::new("listen")
-                    .short('l')
-                    .long("listen")
-                    .value_name("HOST:PORT")
-                    .help("UDP host and port to receive data on")
-                    .default_value("127.0.0.1:34254"))
-            .arg(Arg::new("type")
-                    .short('t')
-                    .long("type")
-                    .value_name("TYPE")
-                    .help("DMX Controller type")
-                    .required(true)
-                    .value_parser(EnumValueParser::<ControllerType>::new()))
-            .get_matches();
+        .about("Network to DMX")
+        .version(crate_version!())
+        .arg(Arg::new("listen")
+            .short('l')
+            .long("listen")
+            .value_name("HOST:PORT")
+            .help("UDP host and port to receive data on")
+            .default_value("127.0.0.1:34254"))
+        .arg(Arg::new("type")
+            .short('t')
+            .long("type")
+            .value_name("TYPE")
+            .help("DMX Controller type")
+            .required(true)
+            .value_parser(EnumValueParser::<ControllerType>::new()))
+        .get_matches();
 
     let socket = net::UdpSocket::bind(matches.get_one::<String>("listen").unwrap())
-            .expect("Failed to open socket");
+        .expect("Failed to open socket");
 
     let context = libusb::Context::new()
-            .expect("Failed to init libusb context");
+        .expect("Failed to init libusb context");
 
     let mut controller: Box<dyn Controller> = match matches.get_one::<ControllerType>("type").unwrap() {
-        ControllerType::Anyma => Box::new(anyma::AnymaController::new(&context)),
-        ControllerType::EurolitePro => Box::new(eurolite_pro::EuroliteProController::new(&context)),
+        ControllerType::Anyma => Box::new(controller::AnymaController::new(&context)),
+        ControllerType::EurolitePro => Box::new(controller::EuroliteProController::new(&context)),
     };
 
-    let (output_pub, output_sub) = mpsc::sync_channel(0);
-    thread::spawn(move || {
-        let mut data = [0; 512];
-        loop {
-            socket.recv(&mut data)
-                  .expect("Failed to receive data");
+    let buffer: Arc<Buffer<[u8; 512]>> = Buffer::with_constructor(|| [0; 512]).into();
+    let r = buffer.clone();
+    let w = buffer.clone();
 
-            if let Err(mpsc::TrySendError::Full(_)) = output_pub.try_send(data) {
-                eprintln!("Output is to slow. Dropping frame.");
-            }
+    thread::spawn(move || {
+        loop {
+            w.update(|data| {
+                socket.recv(&mut *data)
+                    .expect("Failed to receive data");
+            });
         }
     });
 
+    eprintln!("Ready");
+
     loop {
-        let data = output_sub.recv().unwrap();
-        controller.send(data);
+        {
+            let data = r.read();
+            controller.send(&*data);
+        }
+
+        thread::sleep(Duration::from_millis(10));
     }
 }

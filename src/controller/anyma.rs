@@ -28,12 +28,12 @@ impl<'a> AnymaController<'a> {
 }
 
 impl<'a> Controller for AnymaController<'a> {
-    fn send(&mut self, data: [u8; 512]) {
+    fn send(&mut self, data: &[u8; 512]) {
         self.device.write_control(libusb::request_type(libusb::Direction::Out, libusb::RequestType::Vendor, libusb::Recipient::Device),
                                   Self::REQUEST_SET_CHANNEL_RANGE,
                                   data.len() as u16,
                                   0,
-                                  &data,
+                                  data,
                                   time::Duration::from_millis(500))
             .expect("Failed to send data");
     }

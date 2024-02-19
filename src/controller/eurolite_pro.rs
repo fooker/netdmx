@@ -28,6 +28,8 @@ impl<'a> EuroliteProController<'a> {
         device.claim_interface(1)
             .expect("Failed to claim interface");
 
+        device.reset()
+            .expect("Failed to reset USB device");
 
         return Self {
             device
@@ -36,7 +38,7 @@ impl<'a> EuroliteProController<'a> {
 }
 
 impl<'a> Controller for EuroliteProController<'a> {
-    fn send(&mut self, data: [u8; 512]) {
+    fn send(&mut self, data: &[u8; 512]) {
         let frame: [u8; 518] = [
             Self::FRAME_START_OF_MESSAGE,
             Self::FRAME_DMX_LABEL,
