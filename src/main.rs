@@ -54,7 +54,7 @@ fn main() {
     let socket = net::UdpSocket::bind(matches.get_one::<String>("listen").unwrap())
         .expect("Failed to open socket");
 
-    let context = libusb::Context::new()
+    let context = rusb::Context::new()
         .expect("Failed to init libusb context");
 
     let mut controller: Box<dyn Controller> = match matches.get_one::<ControllerType>("type").unwrap() {
@@ -66,7 +66,7 @@ fn main() {
 
     thread::spawn(move || {
         loop {
-            socket.recv(w.input_buffer())
+            socket.recv(w.input_buffer_mut())
                 .expect("Failed to receive data");
 
             w.publish();

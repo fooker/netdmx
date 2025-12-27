@@ -8,6 +8,6 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-libusb = "0.3"
+rusb = "0.9.4"
 clap = { version = "4.5", features = ["cargo"] }
-triple_buffer = "7.0.0"
+triple_buffer = "8.1.1"

@@ -2,13 +2,14 @@ use super::Controller;
 
 use std::time;
 
-use libusb;
+use rusb;
+use rusb::{Context, UsbContext};
 
-pub struct EuroliteProController<'a> {
-    device: libusb::DeviceHandle<'a>,
+pub struct EuroliteProController {
+    device: rusb::DeviceHandle<Context>,
 }
 
-impl<'a> EuroliteProController<'a> {
+impl EuroliteProController {
     const VENDOR_ID: u16 = 0x04d8;
     const PRODUCT_ID: u16 = 0xfa63;
 
@@ -18,8 +19,8 @@ impl<'a> EuroliteProController<'a> {
     const FRAME_END_OF_MESSAGE: u8 = 0xe7;
     const FRAME_DMX_LABEL: u8 = 0x06;
 
-    pub fn new(context: &'a libusb::Context) -> Self {
-        let mut device = context.open_device_with_vid_pid(Self::VENDOR_ID, Self::PRODUCT_ID)
+    pub fn new(context: &rusb::Context) -> Self {
+        let device = context.open_device_with_vid_pid(Self::VENDOR_ID, Self::PRODUCT_ID)
             .expect("Unable to open USB device");
 
         let _ = device.detach_kernel_driver(1);
@@ -37,7 +38,7 @@ impl<'a> EuroliteProController<'a> {
     }
 }
 
-impl<'a> Controller for EuroliteProController<'a> {
+impl Controller for EuroliteProController {
     fn send(&mut self, data: &[u8; 512]) {
         let frame: [u8; 518] = [
             Self::FRAME_START_OF_MESSAGE,
